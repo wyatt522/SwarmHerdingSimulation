@@ -1,0 +1,254 @@
+include "/home/wyatt/WPI_SwarmIntelligence/Buzz/src/include/vec2.bzz"
+
+# This function is executed once at init time
+function init() {
+	# SWARM CREATION
+	shepherd_swarm = swarm.create(1)
+	sheep_swarm = swarm.create(2)
+	
+	shepherd_swarm.select(id == 0)
+	sheep_swarm.select(id != 0)
+
+	# SHEPHERD CONSTANTS
+	shepherd_vel = 6.5
+	FN = 50
+	target_location = math.vec2.new(1000, 1000)
+	shepherd_kp = 2.3
+	state = "collecting"
+	state_change_count = 0
+	
+
+	# SHEEP CONSTANTS
+	base_velocity = 3.5
+
+	repulsion_weight = 3
+	cohesion_weight = 1
+	escape_weight = 6
+	
+	repulsion_radius = 30
+	shepherd_radius = 60
+	sheep_kp = 1.3
+}
+
+# This function is executed at each time step
+# The main loop is controller by ARGoS
+
+function step()
+{
+	sheep_swarm.exec(sheep_step)
+	shepherd_swarm.exec(shepherd_step)
+}
+
+function shepherd_step()
+{
+
+	sheep = neighbors.nonkin()
+	
+	center = math.vec2.new(0, 0)
+	
+	total_sheep = 0
+	foreach(sheep.poses, function(key, value) {
+		diff = dist_ang_to_vec(value)
+		center = math.vec2.add(center, diff)
+		total_sheep = total_sheep + 1
+	})
+	center = math.vec2.scale(center, (1.0/total_sheep))
+	
+	# Identify Closest agent outside of herd radius
+	furthest_agent = -1
+	
+	furthest_agent_pos = center
+	furthest_agent_vec_center = math.vec2.new(0.0, 0.0)
+	furthest_agent_distance = 0
+	furthest_agent_proximity = 10000
+
+	touching_agent = 0
+	herd_compressed = 1
+	foreach(sheep.poses, function(key, value) {
+		diff = dist_ang_to_vec(value)
+		vec_from_center = math.vec2.sub(diff, center)
+		dist_from_center = math.vec2.length(vec_from_center)
+		proximity = math.vec2.length(diff)
+		
+		if (dist_from_center > FN)
+		{
+			herd_compressed = 0
+			if (proximity < furthest_agent_proximity)
+			{
+				furthest_agent = key
+				furthest_agent_pos = diff
+				furthest_agent_vec_center = vec_from_center
+				furthest_agent_distance = dist_from_center
+				furthest_agent_proximity = proximity
+			}
+		}
+		
+		# STOP IF PUSHING SHEEP
+		if (proximity < (shepherd_radius - 15))
+		{
+			touching_agent = 1
+		}
+		
+	})
+	
+	if ((total_sheep > 2) and (touching_agent == 0))
+	{
+		target_direction = 0.0
+		if ((state == "collecting") and (furthest_agent_proximity != 10000))
+		{
+			# COLLECTING -> TARGET DIRECTION SET TO BEHIND FURTHEST AGENT
+			# RED
+			set_leds(255, 0, 0)
+			# go directly behind the furthest agent
+			norm_center_diff_vec = math.vec2.norm(furthest_agent_vec_center)
+			offset = math.vec2.scale(norm_center_diff_vec, (shepherd_radius - 5))
+			goal = math.vec2.add(furthest_agent_pos, offset)
+		
+			target_direction = math.vec2.angle(goal)
+		}
+		else if (state == "driving")
+		{
+			# DRIVING -> TARGET DIRECTION SET TO BEHIND CENTER OF PACK
+			# WHITE
+			set_leds(255, 255, 255)
+			
+			my_pose = math.vec2.new(pose.position.x, pose.position.y)
+			my_pose = math.vec2.scale(my_pose, 1000)
+			rotation = pose.orientation.yaw
+			shep_to_center = math.vec2.rotate(center, rotation)
+			center_world_frame = math.vec2.add(my_pose, shep_to_center)
+			center_to_goal = math.vec2.sub(target_location, center_world_frame)
+			offset_direction = math.vec2.norm(center_to_goal)
+			offset = math.vec2.scale(offset_direction, -(FN + shepherd_radius - 40))
+			goal_world_frame = math.vec2.add(center_world_frame, offset)
+			goal_shepherd_frame = math.vec2.sub(goal_world_frame, my_pose)
+			goal_shepherd_frame = math.vec2.rotate(goal_shepherd_frame, -rotation)
+			
+			target_direction = math.vec2.angle(goal_shepherd_frame)
+			# Print Center Location
+			# log("center in world frame: ", center_world_frame.x, ", ", center_world_frame.y)
+			}
+	
+		# go to goal
+		drive_direction(target_direction, shepherd_vel, shepherd_kp)
+	}
+	else
+	{
+		# TOUCHING AGENT -> STAND STILL
+		# GREEN
+		set_leds(0, 255, 0)
+		set_wheels(0.0, 0.0)
+	}
+
+	# STATE UPDATES
+	if (state == "collecting")
+	{
+		adder = 1
+	}
+	else
+	{
+		adder = -1
+	}
+
+	if (herd_compressed == 1)
+	{
+		state_change_count = math.max(state_change_count + adder, 0)
+	}
+	else
+	{
+		state_change_count = math.max(state_change_count - adder, 0)
+	}
+
+	
+	if (state_change_count == 5)
+	{	
+		state_change_count = 0
+		if (state == "collecting")
+		{
+			state = "driving"
+		}
+		else
+		{
+			state = "collecting"
+		}
+	}
+	
+}
+
+function sheep_step() {
+	set_leds(0, 0, 255)
+	sheep = neighbors.kin()
+	shepherds = neighbors.nonkin()
+
+	cohesion = math.vec2.new(0, 0)
+	repulsion = math.vec2.new(0, 0)
+	escape = math.vec2.new(0, 0)
+	
+	foreach(sheep.poses, function(key, value) {
+		diff = dist_ang_to_vec(value)
+		cohesion = math.vec2.add(cohesion, diff)
+		if(math.vec2.length(diff) < repulsion_radius)
+		{
+			norm_diff = math.vec2.norm(diff)
+			repulsion = math.vec2.sub(repulsion, norm_diff)
+		}    })
+
+	foreach(shepherds.poses, function(key, value) {
+		diff = dist_ang_to_vec(value)
+		if(math.vec2.length(diff) < shepherd_radius)
+		{
+			norm_diff = math.vec2.norm(diff)
+			escape = math.vec2.sub(escape, diff)
+		} })
+
+	cohesion = safe_scale(cohesion, cohesion_weight)
+	repulsion = safe_scale(repulsion, repulsion_weight)
+	escape = safe_scale(escape, escape_weight)
+	
+	direction_vector = math.vec2.add(cohesion, math.vec2.add(repulsion, escape))
+	target_direction = math.vec2.angle(direction_vector)
+	
+	drive_direction(target_direction, base_velocity, sheep_kp)
+}
+
+function dist_ang_to_vec(value) {
+		x = value.distance * math.cos(value.elevation) *
+          math.cos(value.azimuth)
+    y = value.distance * math.cos(value.elevation) *
+          math.sin(value.azimuth)
+		diff = math.vec2.new(x, y)
+		return diff
+	}
+
+function safe_scale(vector, scale) {
+	if (math.vec2.length(vector) != 0)
+	{
+		vector = math.vec2.norm(vector)
+		vector = math.vec2.scale(vector, scale)
+		return vector
+	}
+	else
+	{
+		return vector
+	}
+}
+
+function drive_direction(target_direction, base_v, turn_kp) {
+	if (target_direction < (math.pi/2) and target_direction > -(math.pi/2))
+	{
+		set_wheels(base_v - target_direction*turn_kp, base_v + target_direction*turn_kp)
+	}
+	else
+	{
+		set_wheels(-target_direction*turn_kp, target_direction*turn_kp)
+	}
+}
+
+# This function is executed when you press the reset button
+function reset() {
+	
+}
+
+# This function is executed once when you close the simulator
+function destroy() {
+}
