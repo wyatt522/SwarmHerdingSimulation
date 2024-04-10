@@ -23,7 +23,7 @@ function init() {
 	cohesion_weight = 1
 	escape_weight = 6
 	
-	repulsion_radius = 30
+	repulsion_radius = 25
 	shepherd_radius = 40
 	sheep_kp = 2.5
 }
@@ -82,7 +82,7 @@ function shepherd_step()
 		}
 		
 		# STOP IF PUSHING SHEEP
-		if (proximity < (shepherd_radius - 5))
+		if (proximity < shepherd_radius)
 		{
 			touching_agent = 1
 		}
@@ -198,14 +198,7 @@ function safe_scale(vector, scale) {
 }
 
 function drive_direction(target_direction, base_v, turn_kp) {
-	if (target_direction < (math.pi/2) and target_direction > -(math.pi/2))
-	{
-		set_wheels(base_v - target_direction*turn_kp, base_v + target_direction*turn_kp)
-	}
-	else
-	{
-		set_wheels(-target_direction*turn_kp, target_direction*turn_kp)
-	}
+	set_wheels(base_v - target_direction*turn_kp, base_v + target_direction*turn_kp)
 }
 
 # This function is executed when you press the reset button
