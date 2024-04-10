@@ -12,10 +12,8 @@ function init() {
 	# SHEPHERD CONSTANTS
 	shepherd_vel = 6.5
 	FN = 50
-	target_location = math.vec2.new(1000, 1000)
-	shepherd_kp = 2.3
-	state = "collecting"
-	state_change_count = 0
+	target_location = math.vec2.new(-1500,-1500)
+	shepherd_kp = 1.1
 	
 
 	# SHEEP CONSTANTS
@@ -26,8 +24,8 @@ function init() {
 	escape_weight = 6
 	
 	repulsion_radius = 30
-	shepherd_radius = 60
-	sheep_kp = 1.3
+	shepherd_radius = 40
+	sheep_kp = 2.5
 }
 
 # This function is executed at each time step
@@ -84,7 +82,7 @@ function shepherd_step()
 		}
 		
 		# STOP IF PUSHING SHEEP
-		if (proximity < (shepherd_radius - 15))
+		if (proximity < (shepherd_radius - 5))
 		{
 			touching_agent = 1
 		}
@@ -94,19 +92,19 @@ function shepherd_step()
 	if ((total_sheep > 2) and (touching_agent == 0))
 	{
 		target_direction = 0.0
-		if ((state == "collecting") and (furthest_agent_proximity != 10000))
+		if (herd_compressed == 0)
 		{
 			# COLLECTING -> TARGET DIRECTION SET TO BEHIND FURTHEST AGENT
 			# RED
 			set_leds(255, 0, 0)
 			# go directly behind the furthest agent
 			norm_center_diff_vec = math.vec2.norm(furthest_agent_vec_center)
-			offset = math.vec2.scale(norm_center_diff_vec, (shepherd_radius - 5))
+			offset = math.vec2.scale(norm_center_diff_vec, shepherd_radius)
 			goal = math.vec2.add(furthest_agent_pos, offset)
 		
 			target_direction = math.vec2.angle(goal)
 		}
-		else if (state == "driving")
+		else if (herd_compressed == 1)
 		{
 			# DRIVING -> TARGET DIRECTION SET TO BEHIND CENTER OF PACK
 			# WHITE
@@ -119,7 +117,7 @@ function shepherd_step()
 			center_world_frame = math.vec2.add(my_pose, shep_to_center)
 			center_to_goal = math.vec2.sub(target_location, center_world_frame)
 			offset_direction = math.vec2.norm(center_to_goal)
-			offset = math.vec2.scale(offset_direction, -(FN + shepherd_radius - 40))
+			offset = math.vec2.scale(offset_direction, -(FN + shepherd_radius - 30))
 			goal_world_frame = math.vec2.add(center_world_frame, offset)
 			goal_shepherd_frame = math.vec2.sub(goal_world_frame, my_pose)
 			goal_shepherd_frame = math.vec2.rotate(goal_shepherd_frame, -rotation)
@@ -139,40 +137,6 @@ function shepherd_step()
 		set_leds(0, 255, 0)
 		set_wheels(0.0, 0.0)
 	}
-
-	# STATE UPDATES
-	if (state == "collecting")
-	{
-		adder = 1
-	}
-	else
-	{
-		adder = -1
-	}
-
-	if (herd_compressed == 1)
-	{
-		state_change_count = math.max(state_change_count + adder, 0)
-	}
-	else
-	{
-		state_change_count = math.max(state_change_count - adder, 0)
-	}
-
-	
-	if (state_change_count == 5)
-	{	
-		state_change_count = 0
-		if (state == "collecting")
-		{
-			state = "driving"
-		}
-		else
-		{
-			state = "collecting"
-		}
-	}
-	
 }
 
 function sheep_step() {
