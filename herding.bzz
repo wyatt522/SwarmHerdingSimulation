@@ -9,23 +9,24 @@ function init() {
 	shepherd_swarm.select(id == 0)
 	sheep_swarm.select(id != 0)
 
-	# SHEPHERD CONSTANTS
-	shepherd_vel = 6.5
-	FN = 50
-	target_location = math.vec2.new(-10000, -10000)
-	shepherd_kp = 1.1
-	
-
 	# SHEEP CONSTANTS
-	base_velocity = 3.5
+	base_velocity = 66
 
-	repulsion_weight = 3
-	cohesion_weight = 1
-	escape_weight = 6
+	repulsion_weight = 2
+	cohesion_weight = 1.05
+	escape_weight = 1
 	
-	repulsion_radius = 25
-	shepherd_radius = 40
-	sheep_kp = 2.5
+	repulsion_radius = 133
+	shepherd_radius = 4333
+	sheep_kp = 20
+
+	# SHEPHERD CONSTANTS
+	shepherd_vel = 100
+	num_sheep  = 9 ## UPDATE THIS IN ARGOS FILE AS WELL
+	FN = repulsion_radius*(num_sheep^(2/3))
+	target_location = math.vec2.new(-10000, 10000)
+	shepherd_kp = 30
+
 }
 
 # This function is executed at each time step
@@ -81,8 +82,8 @@ function shepherd_step()
 			}
 		}
 		
-		# STOP IF PUSHING SHEEP
-		if (proximity < shepherd_radius)
+		# STOP IF NEXT TO SHEEP
+		if (proximity < repulsion_radius)
 		{
 			touching_agent = 1
 		}
@@ -99,7 +100,7 @@ function shepherd_step()
 			set_leds(255, 0, 0)
 			# go directly behind the furthest agent
 			norm_center_diff_vec = math.vec2.norm(furthest_agent_vec_center)
-			offset = math.vec2.scale(norm_center_diff_vec, shepherd_radius)
+			offset = math.vec2.scale(norm_center_diff_vec, repulsion_radius)
 			goal = math.vec2.add(furthest_agent_pos, offset)
 		
 			target_direction = math.vec2.angle(goal)
@@ -117,7 +118,7 @@ function shepherd_step()
 			center_world_frame = math.vec2.add(my_pose, shep_to_center)
 			center_to_goal = math.vec2.sub(target_location, center_world_frame)
 			offset_direction = math.vec2.norm(center_to_goal)
-			offset = math.vec2.scale(offset_direction, -(FN + shepherd_radius - 30))
+			offset = math.vec2.scale(offset_direction, -(repulsion_radius*(math.sqrt(total_sheep))))
 			goal_world_frame = math.vec2.add(center_world_frame, offset)
 			goal_shepherd_frame = math.vec2.sub(goal_world_frame, my_pose)
 			goal_shepherd_frame = math.vec2.rotate(goal_shepherd_frame, -rotation)
