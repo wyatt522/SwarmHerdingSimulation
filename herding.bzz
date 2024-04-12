@@ -12,7 +12,7 @@ function init() {
 	# SHEPHERD CONSTANTS
 	shepherd_vel = 6.5
 	FN = 50
-	target_location = math.vec2.new(-1500,-1500)
+	target_location = math.vec2.new(-10000, -10000)
 	shepherd_kp = 1.1
 	
 
