@@ -9,23 +9,23 @@ function init() {
 	shepherd_swarm.select(id == 0)
 	sheep_swarm.select(id != 0)
 
-	# SHEPHERD CONSTANTS
-	shepherd_vel = 6.5
-	FN = 50
-	target_location = math.vec2.new(-10000, -10000)
-	shepherd_kp = 1.1
-	
-
 	# SHEEP CONSTANTS
-	base_velocity = 3.5
+	num_sheep = 20 # THIS IS UPDATED IN HERDING.ARGOS
+	base_velocity = 20
 
-	repulsion_weight = 3
-	cohesion_weight = 1
-	escape_weight = 6
+	repulsion_weight = 2
+	cohesion_weight = 1.05
+	escape_weight = 1
 	
-	repulsion_radius = 25
-	shepherd_radius = 40
-	sheep_kp = 2.5
+	repulsion_radius = 40
+	shepherd_radius = 1300
+	sheep_kp = 6
+
+	# SHEPHERD CONSTANTS
+	shepherd_vel = 30
+	FN = (repulsion_radius)*(math.sqrt(num_sheep))
+	target_location = math.vec2.new(-3000, -3000)
+	shepherd_kp = 9
 }
 
 # This function is executed at each time step
@@ -58,7 +58,7 @@ function shepherd_step()
 	furthest_agent_pos = center
 	furthest_agent_vec_center = math.vec2.new(0.0, 0.0)
 	furthest_agent_distance = 0
-	furthest_agent_proximity = 10000
+	furthest_agent_proximity = 30000
 
 	touching_agent = 0
 	herd_compressed = 1
@@ -82,14 +82,14 @@ function shepherd_step()
 		}
 		
 		# STOP IF PUSHING SHEEP
-		if (proximity < shepherd_radius)
+		if (proximity < (3*repulsion_radius))
 		{
 			touching_agent = 1
 		}
 		
 	})
 	
-	if ((total_sheep > 2) and (touching_agent == 0))
+	if ((total_sheep > 1))
 	{
 		target_direction = 0.0
 		if (herd_compressed == 0)
@@ -99,7 +99,7 @@ function shepherd_step()
 			set_leds(255, 0, 0)
 			# go directly behind the furthest agent
 			norm_center_diff_vec = math.vec2.norm(furthest_agent_vec_center)
-			offset = math.vec2.scale(norm_center_diff_vec, shepherd_radius)
+			offset = math.vec2.scale(norm_center_diff_vec, repulsion_radius)
 			goal = math.vec2.add(furthest_agent_pos, offset)
 		
 			target_direction = math.vec2.angle(goal)
@@ -117,7 +117,7 @@ function shepherd_step()
 			center_world_frame = math.vec2.add(my_pose, shep_to_center)
 			center_to_goal = math.vec2.sub(target_location, center_world_frame)
 			offset_direction = math.vec2.norm(center_to_goal)
-			offset = math.vec2.scale(offset_direction, -(FN + shepherd_radius - 30))
+			offset = math.vec2.scale(offset_direction, -(repulsion_radius*math.sqrt(num_sheep)))
 			goal_world_frame = math.vec2.add(center_world_frame, offset)
 			goal_shepherd_frame = math.vec2.sub(goal_world_frame, my_pose)
 			goal_shepherd_frame = math.vec2.rotate(goal_shepherd_frame, -rotation)
@@ -128,11 +128,19 @@ function shepherd_step()
 			}
 	
 		# go to goal
-		drive_direction(target_direction, shepherd_vel, shepherd_kp)
+		if (touching_agent == 0)
+		{
+			drive_direction(target_direction, shepherd_vel, shepherd_kp)
+		}
+		else
+		{
+			# CLOSE TO AGENT -> SLOW DOWN
+			drive_direction(target_direction, (shepherd_vel*0.3), (shepherd_kp*0.5))
+		}
 	}
 	else
 	{
-		# TOUCHING AGENT -> STAND STILL
+		# CAN'T FIND HERD -> STAND STILL
 		# GREEN
 		set_leds(0, 255, 0)
 		set_wheels(0.0, 0.0)
