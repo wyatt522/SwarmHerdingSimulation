@@ -2,15 +2,24 @@
 
 include "/home/ashley/Downloads/buzz/src/include/vec2.bzz"
 
+numMechFaultAgents = 2;
+totalAgents = 20;
 
 # This function is executed once at init time
 function init() {
 	# SWARM CREATION
 	shepherd_swarm = swarm.create(1)
 	sheep_swarm = swarm.create(2)
+	mechFault_swarm = swarm.create(3)
+
+	if (numMechFaultAgents > 0)
+	{
+		
+		mechFault_swarm.select(id < numMechFaultAgents)
+	}
 	
-	shepherd_swarm.select(id == 0)
-	sheep_swarm.select(id != 0)
+	shepherd_swarm.select(id == numMechFaultAgents)
+	sheep_swarm.select(id > numMechFaultAgents)
 
 	# SHEEP CONSTANTS
 	num_sheep = 20 # THIS IS UPDATED IN HERDING.ARGOS
@@ -38,6 +47,14 @@ function step()
 {
 	sheep_swarm.exec(sheep_step)
 	shepherd_swarm.exec(shepherd_step)
+	mechFault_swarm.exec(mechFault_step)
+}
+
+function mechFault_step()
+{
+
+	drive_direction(0.0, 0.0, 0.0)
+	set_leds(255, 255, 0)
 }
 
 function shepherd_step()
