@@ -1,4 +1,7 @@
-include "/home/wyatt/WPI_SwarmIntelligence/Buzz/src/include/vec2.bzz"
+#include "/Buzz/src/include/vec2.bzz"
+
+include "/home/ashley/Downloads/buzz/src/include/vec2.bzz"
+
 
 # This function is executed once at init time
 function init() {
