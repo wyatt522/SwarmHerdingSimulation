@@ -5,21 +5,15 @@ include "/home/ashley/Downloads/buzz/src/include/vec2.bzz"
 numMechFaultAgents = 2;
 totalAgents = 20;
 
+
 # This function is executed once at init time
 function init() {
 	# SWARM CREATION
 	shepherd_swarm = swarm.create(1)
 	sheep_swarm = swarm.create(2)
-	mechFault_swarm = swarm.create(3)
-
-	if (numMechFaultAgents > 0)
-	{
-		
-		mechFault_swarm.select(id < numMechFaultAgents)
-	}
 	
-	shepherd_swarm.select(id == numMechFaultAgents)
-	sheep_swarm.select(id > numMechFaultAgents)
+	shepherd_swarm.select(id == 0)
+	sheep_swarm.select(id > 0)
 
 	# SHEEP CONSTANTS
 	num_sheep = 20 # THIS IS UPDATED IN HERDING.ARGOS
@@ -47,7 +41,9 @@ function step()
 {
 	sheep_swarm.exec(sheep_step)
 	shepherd_swarm.exec(shepherd_step)
-	mechFault_swarm.exec(mechFault_step)
+	#mechFault_swarm.exec(mechFault_step)
+
+	
 }
 
 function mechFault_step()
@@ -57,10 +53,38 @@ function mechFault_step()
 	set_leds(255, 255, 0)
 }
 
+function table_print(t) {
+  foreach(t, function(key, value) {
+      log(key, " -> ", value)
+    })
+}
+
 function shepherd_step()
 {
+	
+
+  vThreshold = 1;
 
 	sheep = neighbors.nonkin()
+
+	#remove the sheep that arent moving from the swarm
+	movingSheep = swarm.create(4)
+
+	t = { .1=0, .2=0, .3=0, .4=0, .5=0, .6=0, .7=0, .8=0, .9=0, .10=0, .11=0, .12=0, .13=0, .14=0, .15=0, .16=0, .17=0, .18=0, .19=0 }
+
+
+	log("shepherd ", id)
+	log(" count1 ", sheep.count())
+
+sheep = sheep.filter(function(rid, data) {
+# We assume the distance is expressed in centimeters
+return rid > 3 })
+
+
+	log(" count2 ", sheep.count())
+
+
+	#end of remove the sheep that arent moving from the swarm
 	
 	center = math.vec2.new(0, 0)
 	
@@ -200,6 +224,16 @@ function sheep_step() {
 	direction_vector = math.vec2.add(cohesion, math.vec2.add(repulsion, escape))
 	target_direction = math.vec2.angle(direction_vector)
 	
+
+	#make the faulty robots not move
+	if ((id > 0) and (id <= numMechFaultAgents))
+	{
+	target_direction = 0.0
+	base_velocity = 0.0
+	sheep_kp = 0.0
+	set_leds(255, 255, 0)
+	}
+
 	drive_direction(target_direction, base_velocity, sheep_kp)
 }
 
@@ -227,6 +261,9 @@ function safe_scale(vector, scale) {
 
 function drive_direction(target_direction, base_v, turn_kp) {
 	set_wheels(base_v - target_direction*turn_kp, base_v + target_direction*turn_kp)
+
+	neighbors.broadcast("vel", base_v);
+	
 }
 
 # This function is executed when you press the reset button
