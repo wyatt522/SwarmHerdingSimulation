@@ -1,6 +1,7 @@
 #include "/Buzz/src/include/vec2.bzz"
 
-include "/home/ashley/Downloads/buzz/src/include/vec2.bzz"
+include "/home/wyatt/WPI_SwarmIntelligence/Buzz/src/include/vec2.bzz"
+#include "/home/ashley/Downloads/buzz/src/include/vec2.bzz"
 
 numMechFaultAgents = 2;
 totalAgents = 20;
@@ -176,7 +177,7 @@ sheep = fullSheep.filter(
 			}
 		else
 			{
-			log("FAULT AT ", rid)
+			# log("FAULT AT ", rid)
 			}
 
 return (aboveThreshold == 1) })
@@ -367,7 +368,7 @@ function drive_direction(target_direction, base_v, turn_kp) {
 
 # This function is executed when you press the reset button
 function reset() {
-	
+
 }
 
 # This function is executed once when you close the simulator

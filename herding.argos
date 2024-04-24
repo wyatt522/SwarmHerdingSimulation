@@ -23,9 +23,8 @@
         or set to zero, this value is taken from the clock and a warning
         message is displayed.
     -->
-    <experiment length="0"
-                ticks_per_second="10"
-                random_seed="90" />
+    <experiment length="2000"
+                ticks_per_second="10" />
   </framework>
 
   <!-- *************** -->
