@@ -23,7 +23,7 @@
         or set to zero, this value is taken from the clock and a warning
         message is displayed.
     -->
-    <experiment length="2000"
+    <experiment length="200"
                 ticks_per_second="10" />
   </framework>
 
