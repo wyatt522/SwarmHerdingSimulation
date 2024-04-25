@@ -1,4 +1,17 @@
+#include "/Buzz/src/include/vec2.bzz"
+
 include "/home/wyatt/WPI_SwarmIntelligence/Buzz/src/include/vec2.bzz"
+#include "/home/ashley/Downloads/buzz/src/include/vec2.bzz"
+
+numMechFaultAgents = 2;
+totalAgents = 20;
+fault_detection_on = 0;
+
+tempRID = 0;
+
+
+v = { .v1=0, .v2=0, .v3=0, .v4=0, .v5=0, .v6=0, .v7=0, .v8=0, .v9=0, .v10=0, .v11=0, .v12=0, .v13=0, .v14=0, .v15=0, .v16=0, .v17=0, .v18=0, .v19=0 }
+
 
 # This function is executed once at init time
 function init() {
@@ -7,8 +20,10 @@ function init() {
 	sheep_swarm = swarm.create(2)
 	
 	shepherd_swarm.select(id == 0)
-	sheep_swarm.select(id != 0)
+	sheep_swarm.select(id > 0)
 
+	oldSheep = neighbors.nonkin()
+	sheep = neighbors.nonkin()
 	# SHEEP CONSTANTS
 	num_sheep = 20 # THIS IS UPDATED IN HERDING.ARGOS
 	base_velocity = 20
@@ -26,6 +41,52 @@ function init() {
 	FN = (repulsion_radius)*(math.sqrt(num_sheep))
 	target_location = math.vec2.new(-3000, -3000)
 	shepherd_kp = 9
+
+#update global velocity variable
+
+	neighbors.listen("vel",
+   function(vid, value, rid) { 
+	#update  velocities of sheep for shepherd
+		if (rid == 1)
+		{v.v1 = value}
+		else if (rid == 2)
+		{v.v2 = value}
+		else if (rid == 3)
+		{v.v3 = value}
+		else if (rid == 4)
+		{v.v4 = value}
+		else if (rid == 5)
+		{v.v5 = value}
+		else if (rid == 6)
+		{v.v6 = value}
+		else if (rid == 7)
+		{v.v7 = value}
+		else if (rid == 8)
+		{v.v8 = value}
+		else if (rid == 9)
+		{v.v9 = value}
+		else if (rid == 10)
+		{v.v10 = value}
+		else if (rid == 11)
+		{v.v11 = value}
+		else if (rid == 12)
+		{v.v12 = value}
+		else if (rid == 13)
+		{v.v13 = value}
+		else if (rid == 14)
+		{v.v14 = value}
+		else if (rid == 15)
+		{v.v15 = value}
+		else if (rid == 16)
+		{v.v16 = value}
+		else if (rid == 17)
+		{v.v17 = value}
+		else if (rid == 18)
+		{v.v18 = value}
+		else if (rid == 19)
+		{v.v19 = value}
+})
+
 }
 
 # This function is executed at each time step
@@ -35,12 +96,100 @@ function step()
 {
 	sheep_swarm.exec(sheep_step)
 	shepherd_swarm.exec(shepherd_step)
+
+	v = { .1=0, .2=0, .3=0, .4=0, .5=0, .6=0, .7=0, .8=0, .9=0, .10=0, .11=0, .12=0, .13=0, .14=0, .15=0, .16=0, .17=0, .18=0, .19=0 }
+
+}
+
+function mechFault_step()
+{
+
+	drive_direction(0.0, 0.0, 0.0)
+	set_leds(255, 255, 0)
+}
+
+function table_print(t) {
+  foreach(t, function(key, value) {
+      log(key, " -> ", value)
+    })
 }
 
 function shepherd_step()
 {
+	
 
-	sheep = neighbors.nonkin()
+  vThreshold = 0.1;
+
+	fullSheep = neighbors.nonkin()
+
+	#remove the sheep that arent moving from the swarm
+	if (fault_detection_on == 1)
+	{
+		#filter code
+		sheep = fullSheep.filter(
+			function(rid, data) {
+			tempRID = rid
+			aboveThreshold = 0;
+
+			velocity = 0
+
+			if (rid == 1)
+			{velocity = v.v1}
+			else if (rid == 2)
+			{velocity = v.v2}
+			else if (rid == 3)
+			{velocity = v.v3}
+			else if (rid == 4)
+			{velocity = v.v4}
+			else if (rid == 5)
+			{velocity = v.v5}
+			else if (rid == 6)
+			{velocity = v.v6}
+			else if (rid == 7)
+			{velocity = v.v7}
+			else if (rid == 8)
+			{velocity = v.v8}
+			else if (rid == 9)
+			{velocity = v.v9}
+			else if (rid == 10)
+			{velocity = v.v10}
+			else if (rid == 11)
+			{velocity = v.v11}
+			else if (rid == 12)
+			{velocity = v.v12}
+			else if (rid == 13)
+			{velocity = v.v13}
+			else if (rid == 14)
+			{velocity = v.v14}
+			else if (rid == 15)
+			{velocity = v.v15}
+			else if (rid == 16)
+			{velocity = v.v16}
+			else if (rid == 17)
+			{velocity = v.v17}
+			else if (rid == 18)
+			{velocity = v.v18}
+			else if (rid == 19)
+			{velocity = v.v19}
+
+
+			if ((velocity < -vThreshold) or (velocity > vThreshold))
+			{
+				aboveThreshold = 1;
+			}
+			else
+			{
+				# log("FAULT AT ", rid)
+			}
+
+			return (aboveThreshold == 1) })
+	}
+	else
+	{
+		# don't filter if filtering is off
+		sheep = fullSheep
+	}
+	#end of remove the sheep that arent moving from the swarm
 	
 	center = math.vec2.new(0, 0)
 	
@@ -180,6 +329,16 @@ function sheep_step() {
 	direction_vector = math.vec2.add(cohesion, math.vec2.add(repulsion, escape))
 	target_direction = math.vec2.angle(direction_vector)
 	
+
+	#make the faulty robots not move
+	if ((id > 0) and (id <= numMechFaultAgents))
+	{
+	target_direction = 0.0
+	base_velocity = 0.0
+	sheep_kp = 0.0
+	set_leds(255, 255, 0)
+	}
+
 	drive_direction(target_direction, base_velocity, sheep_kp)
 }
 
@@ -207,11 +366,14 @@ function safe_scale(vector, scale) {
 
 function drive_direction(target_direction, base_v, turn_kp) {
 	set_wheels(base_v - target_direction*turn_kp, base_v + target_direction*turn_kp)
+
+	neighbors.broadcast("vel", base_v);
+	
 }
 
 # This function is executed when you press the reset button
 function reset() {
-	
+
 }
 
 # This function is executed once when you close the simulator
