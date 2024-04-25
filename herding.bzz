@@ -5,6 +5,7 @@ include "/home/wyatt/WPI_SwarmIntelligence/Buzz/src/include/vec2.bzz"
 
 numMechFaultAgents = 2;
 totalAgents = 20;
+fault_detection_on = 0;
 
 tempRID = 0;
 
@@ -122,68 +123,72 @@ function shepherd_step()
 	fullSheep = neighbors.nonkin()
 
 	#remove the sheep that arent moving from the swarm
+	if (fault_detection_on == 1)
+	{
+		#filter code
+		sheep = fullSheep.filter(
+			function(rid, data) {
+			tempRID = rid
+			aboveThreshold = 0;
 
-#filter code
-sheep = fullSheep.filter(
-	function(rid, data) {
-	tempRID = rid
-	aboveThreshold = 0;
+			velocity = 0
 
-		velocity = 0
-
-		if (rid == 1)
-		{velocity = v.v1}
-		else if (rid == 2)
-		{velocity = v.v2}
-		else if (rid == 3)
-		{velocity = v.v3}
-		else if (rid == 4)
-		{velocity = v.v4}
-		else if (rid == 5)
-		{velocity = v.v5}
-		else if (rid == 6)
-		{velocity = v.v6}
-		else if (rid == 7)
-		{velocity = v.v7}
-		else if (rid == 8)
-		{velocity = v.v8}
-		else if (rid == 9)
-		{velocity = v.v9}
-		else if (rid == 10)
-		{velocity = v.v10}
-		else if (rid == 11)
-		{velocity = v.v11}
-		else if (rid == 12)
-		{velocity = v.v12}
-		else if (rid == 13)
-		{velocity = v.v13}
-		else if (rid == 14)
-		{velocity = v.v14}
-		else if (rid == 15)
-		{velocity = v.v15}
-		else if (rid == 16)
-		{velocity = v.v16}
-		else if (rid == 17)
-		{velocity = v.v17}
-		else if (rid == 18)
-		{velocity = v.v18}
-		else if (rid == 19)
-		{velocity = v.v19}
+			if (rid == 1)
+			{velocity = v.v1}
+			else if (rid == 2)
+			{velocity = v.v2}
+			else if (rid == 3)
+			{velocity = v.v3}
+			else if (rid == 4)
+			{velocity = v.v4}
+			else if (rid == 5)
+			{velocity = v.v5}
+			else if (rid == 6)
+			{velocity = v.v6}
+			else if (rid == 7)
+			{velocity = v.v7}
+			else if (rid == 8)
+			{velocity = v.v8}
+			else if (rid == 9)
+			{velocity = v.v9}
+			else if (rid == 10)
+			{velocity = v.v10}
+			else if (rid == 11)
+			{velocity = v.v11}
+			else if (rid == 12)
+			{velocity = v.v12}
+			else if (rid == 13)
+			{velocity = v.v13}
+			else if (rid == 14)
+			{velocity = v.v14}
+			else if (rid == 15)
+			{velocity = v.v15}
+			else if (rid == 16)
+			{velocity = v.v16}
+			else if (rid == 17)
+			{velocity = v.v17}
+			else if (rid == 18)
+			{velocity = v.v18}
+			else if (rid == 19)
+			{velocity = v.v19}
 
 
-		if ((velocity < -vThreshold) or (velocity > vThreshold))
+			if ((velocity < -vThreshold) or (velocity > vThreshold))
 			{
-			aboveThreshold = 1;
+				aboveThreshold = 1;
 			}
-		else
+			else
 			{
-			# log("FAULT AT ", rid)
+				# log("FAULT AT ", rid)
 			}
 
-return (aboveThreshold == 1) })
-
-
-
+			return (aboveThreshold == 1) })
+	}
+	else
+	{
+		# don't filter if filtering is off
+		sheep = fullSheep
+	}
 	#end of remove the sheep that arent moving from the swarm
 	
 	center = math.vec2.new(0, 0)
